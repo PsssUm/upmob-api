@@ -6,7 +6,7 @@ import android.provider.Settings
 
 class Upmob(context: Context, token : String) {
     init {
-        val intent = Intent(context, MainActivity::class.java)
+        val intent = Intent(context, UpmobWebviewActivity::class.java)
         val android_id = Settings.Secure.getString(context.getContentResolver(),
             Settings.Secure.ANDROID_ID);
         intent.putExtra(Constants.TOKEN, token)

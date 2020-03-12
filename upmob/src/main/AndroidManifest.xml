@@ -2,7 +2,7 @@
     package="com.psssum.upmob" >
 
     <application>
-        <activity android:name=".MainActivity"
+        <activity android:name=".UpmobWebviewActivity"
             android:theme="@style/WebViewActivity"
             android:screenOrientation="portrait">
 
