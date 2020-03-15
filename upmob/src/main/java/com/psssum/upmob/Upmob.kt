@@ -4,8 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 
-class Upmob(context: Context, token : String, apiKey : String) {
+class Upmob(context: Context, token : String, apiKey : String, onFailListener: OnFailListener) {
     init {
+        Constants.onFailListener = onFailListener
         val intent = Intent(context, UpmobWebviewActivity::class.java)
         val android_id = Settings.Secure.getString(context.getContentResolver(),
             Settings.Secure.ANDROID_ID);

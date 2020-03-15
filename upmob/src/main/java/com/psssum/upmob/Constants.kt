@@ -4,4 +4,5 @@ object Constants {
     val TOKEN = "TOKEN"
     val DEVICE_ID = "DEVICE_ID"
     val API_KEY = "API_KEY"
+    var onFailListener : OnFailListener? = null
 }

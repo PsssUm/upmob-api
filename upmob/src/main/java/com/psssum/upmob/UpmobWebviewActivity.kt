@@ -72,6 +72,17 @@ class UpmobWebviewActivity : AppCompatActivity() {
             clipboard.setPrimaryClip(clip)
             Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show()
         }
+        @JavascriptInterface
+        fun registrationFailed(desc : String){
+            if (Constants.onFailListener != null){
+                Constants.onFailListener!!.onError(desc)
+                mContext.finish()
+            }
+        }
+        @JavascriptInterface
+        fun finish(){
+            mContext.finish()
+        }
 
         init {
             mContext = c
