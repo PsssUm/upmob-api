@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 
-class Upmob(context: Context, token : String, apiKey : String, onFailListener: OnFailListener) {
+class Upmob(context: Context, token : String, apiKey : String, userId : String = "",onFailListener: OnFailListener) {
     init {
         Constants.onFailListener = onFailListener
         val intent = Intent(context, UpmobWebviewActivity::class.java)
@@ -13,6 +13,7 @@ class Upmob(context: Context, token : String, apiKey : String, onFailListener: O
         intent.putExtra(Constants.TOKEN, token)
         intent.putExtra(Constants.DEVICE_ID, android_id)
         intent.putExtra(Constants.API_KEY, apiKey)
+        intent.putExtra(Constants.USER_ID, userId)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
         context.startActivity(intent)
     }
