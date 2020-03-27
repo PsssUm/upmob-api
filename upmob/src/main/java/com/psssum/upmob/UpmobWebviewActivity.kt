@@ -6,8 +6,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.animation.DecelerateInterpolator
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +19,7 @@ import kotlinx.android.synthetic.main.activity_webview_layout.*
 class UpmobWebviewActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setAnimation()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_webview_layout)
         val token = intent.getStringExtra(Constants.TOKEN)
@@ -100,6 +103,16 @@ class UpmobWebviewActivity : AppCompatActivity() {
         //HERE IS THE MAIN CHANGE.
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
             return false
+        }
+    }
+    private fun setAnimation(){
+
+        if (Build.VERSION.SDK_INT > 20) {
+            val fadeAnimaton = android.transition.Fade()
+            fadeAnimaton.setDuration(200)
+            fadeAnimaton.setInterpolator(DecelerateInterpolator())
+            getWindow().setExitTransition(fadeAnimaton)
+            getWindow().setEnterTransition(fadeAnimaton)
         }
     }
 }
