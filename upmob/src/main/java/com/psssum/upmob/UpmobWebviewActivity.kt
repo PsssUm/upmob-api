@@ -27,6 +27,8 @@ class UpmobWebviewActivity : AppCompatActivity() {
         webview.loadUrl("https://app-coins.ru/tasks?device_id=$device_id&token_google=$token&api_key=$api_key&uniq_user_id=$uniq_user_id")
         val webSettings: WebSettings = webview.getSettings()
         webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+
         webview.webViewClient = MyWebViewClient()
         webview.addJavascriptInterface(WebAppInterface(this), "Android")
         webSettings.javaScriptCanOpenWindowsAutomatically = false
