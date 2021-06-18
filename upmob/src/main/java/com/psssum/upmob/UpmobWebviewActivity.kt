@@ -1,10 +1,7 @@
 package com.psssum.upmob
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +10,8 @@ import android.view.animation.DecelerateInterpolator
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.PreferenceManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import kotlinx.android.synthetic.main.activity_webview_layout.*
 
 
@@ -54,9 +53,9 @@ class UpmobWebviewActivity : AppCompatActivity() {
             }
         }
         @JavascriptInterface
-        fun openUrl(url : String){
+        fun openUrl(url: String){
 
-            Log.d("mainActivty","url =" + url   )
+            Log.d("mainActivty", "url =" + url)
             val intent = Intent("android.intent.action.VIEW", Uri.parse(url))
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             mContext.startActivity(intent)
@@ -72,14 +71,14 @@ class UpmobWebviewActivity : AppCompatActivity() {
 
         }
         @JavascriptInterface
-        fun copyId(id : String, text : String){
+        fun copyId(id: String, text: String){
             val clipboard = mContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("", id)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show()
         }
         @JavascriptInterface
-        fun registrationFailed(desc : String){
+        fun registrationFailed(desc: String){
             if (Constants.onFailListener != null){
                 Constants.onFailListener!!.onError(desc)
                 mContext.finish()
@@ -89,11 +88,43 @@ class UpmobWebviewActivity : AppCompatActivity() {
         fun finish(){
             mContext.finish()
         }
+        @JavascriptInterface
+        fun showReviewDialog() {
+            if (!isRated(mContext)) {
+                setRated(mContext)
+                val manager = ReviewManagerFactory.create(mContext)
+                //val manager = FakeReviewManager(requireContext()) //TEST MODE!!!
+                val request = manager.requestReviewFlow()
+                request.addOnCompleteListener { r ->
+                    if (r.isSuccessful) {
+                        val reviewInfo = r.result
+                        val flow = manager.launchReviewFlow(mContext, reviewInfo)
+                        flow.addOnCompleteListener { _ ->
 
+                        }
+                    }
+                }
+            }
+        }
+        private val IS_RATE = "IS_RATE"
+        fun isRated(ctx: Context?): Boolean {
+            val sPref = PreferenceManager
+                .getDefaultSharedPreferences(ctx)
+            return sPref.getBoolean(IS_RATE, false)
+        }
+
+        fun setRated(ctx: Context?) {
+            val sPref = PreferenceManager
+                .getDefaultSharedPreferences(ctx)
+            val ed = sPref.edit()
+            ed.putBoolean(IS_RATE, true)
+            ed.apply()
+        }
         init {
             mContext = c
         }
     }
+
 
     override fun onResume() {
         super.onResume()
