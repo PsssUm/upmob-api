@@ -1,21 +1,33 @@
 package com.psssum.upmob
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.*
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.animation.DecelerateInterpolator
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
+import br.com.onimur.handlepathoz.HandlePathOz
+import br.com.onimur.handlepathoz.HandlePathOzListener
+import br.com.onimur.handlepathoz.model.PathOz
 import com.google.android.play.core.review.ReviewManagerFactory
 import kotlinx.android.synthetic.main.activity_webview_layout.*
+import java.io.File
+import java.io.FileNotFoundException
 
 
 class UpmobWebviewActivity : AppCompatActivity() {
+    private lateinit var webInterFace : WebAppInterface
+    private val SELECT_PHOTO = 1
+    private lateinit var handlePathOz: HandlePathOz
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setAnimation()
@@ -32,12 +44,66 @@ class UpmobWebviewActivity : AppCompatActivity() {
         webSettings.domStorageEnabled = true
 
         webview.webViewClient = MyWebViewClient()
-        webview.addJavascriptInterface(WebAppInterface(this), "Android")
+        webInterFace = WebAppInterface(this)
+        webview.addJavascriptInterface(webInterFace, "Android")
         webSettings.javaScriptCanOpenWindowsAutomatically = false
+        handlePathOz = HandlePathOz(this, object : HandlePathOzListener.SingleUri{
+            override fun onRequestHandlePathOz(pathOz: PathOz, tr: Throwable?) {
+                val file = File(pathOz.path)
+                val value: String = Base64.encodeToString(file.readBytes(), Base64.DEFAULT)
+                runOnUiThread {
+                    webview.loadUrl("javascript:handleImage('data:image/png;base64,${value}')")
+                }
+            }
+        })
 
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SELECT_PHOTO) {
+            try {
+                val imageUri: Uri? = data?.data
+                imageUri?.let {
+                    //webview.loadUrl("javascript:onResume()")
+                    handlePathOz.getRealPath(imageUri)
+                }
+
+            } catch (e: FileNotFoundException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        webInterFace.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
     class WebAppInterface internal constructor(c: Activity) {
         var mContext: Activity
+        private val READ_STORAGE_PERMISSION_REQUEST_CODE = 3
+
+        fun onRequestPermissionsResult(
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
+        ){
+            when (requestCode) {
+                READ_STORAGE_PERMISSION_REQUEST_CODE -> {
+                    // If request is cancelled, the result arrays are empty.
+                    if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                        pickPhoto()
+                    }
+                    return
+                } else -> {
+                    // Ignore all other requests.
+                }
+            }
+        }
 
         @JavascriptInterface
         fun showToast(toast: String) {
@@ -68,7 +134,18 @@ class UpmobWebviewActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
+        }
+        @JavascriptInterface
+        fun openAppWithParams(packagename: String, google_user_id : String, order_id : String) {
+            try {
+                val i = mContext.packageManager!!.getLaunchIntentForPackage(packagename)
+                i!!.putExtra("google_user_id", google_user_id)
+                i!!.putExtra("order_id", order_id)
+                i.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                mContext.startActivity(i)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
         @JavascriptInterface
         fun copyId(id: String, text: String){
@@ -120,8 +197,59 @@ class UpmobWebviewActivity : AppCompatActivity() {
             ed.putBoolean(IS_RATE, true)
             ed.apply()
         }
+        @JavascriptInterface
+        fun getStringPref(key : String): String {
+            val sPref = PreferenceManager
+                .getDefaultSharedPreferences(mContext)
+            return sPref.getString(key, "").toString()
+        }
+        @JavascriptInterface
+        fun setStringPref(text: String, key : String) {
+            val sPref = PreferenceManager
+                .getDefaultSharedPreferences(mContext)
+            val ed = sPref.edit()
+            ed.putString(key, text)
+            ed.apply()
+        }
+        @JavascriptInterface
+        fun checkPickPhoto(){
+            if (checkPermissionForReadExtertalStorage()) {
+                pickPhoto()
+            } else {
+                requestPermissionForReadExtertalStorage()
+            }
+        }
+        private fun checkPermissionForReadExtertalStorage(): Boolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val result: Int = mContext.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                val resultWrite: Int = mContext.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                return result == PackageManager.PERMISSION_GRANTED && resultWrite == PackageManager.PERMISSION_GRANTED
+            }
+            return false
+        }
+        private fun pickPhoto() {
+            val photoPickerIntent = Intent(Intent.ACTION_PICK)
+            photoPickerIntent.type = "image/*"
+            photoPickerIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            mContext.startActivityForResult(photoPickerIntent, 1)
+        }
+        @SuppressLint("NewApi")
+        @Throws(Exception::class)
+        fun requestPermissionForReadExtertalStorage() {
+            try {
+                mContext.requestPermissions(
+                    arrayOf<String>(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    READ_STORAGE_PERMISSION_REQUEST_CODE
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            }
+        }
         init {
             mContext = c
+
+
         }
     }
 
