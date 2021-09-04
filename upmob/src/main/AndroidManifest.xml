@@ -8,4 +8,9 @@
 
         </activity>
     </application>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
 </manifest>
