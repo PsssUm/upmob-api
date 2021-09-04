@@ -104,7 +104,10 @@ class UpmobWebviewActivity : AppCompatActivity() {
                 }
             }
         }
-
+        @JavascriptInterface
+        fun checkInstalledNew(packagename: String): Boolean {
+            return mContext.packageManager!!.getLaunchIntentForPackage(packagename) != null
+        }
         @JavascriptInterface
         fun showToast(toast: String) {
             Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show()
